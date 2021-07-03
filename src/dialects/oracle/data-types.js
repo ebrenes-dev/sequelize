@@ -3,6 +3,7 @@
 const _ = require('lodash');
 const moment = require('moment');
 const momentTz = require('moment-timezone');
+const Utils = require('./utilities');
 
 module.exports = BaseTypes => {
   const warn = BaseTypes.ABSTRACT.warn.bind(
@@ -28,6 +29,7 @@ module.exports = BaseTypes => {
   BaseTypes.NUMERIC.types.oracle = false;
   BaseTypes.DOUBLE.types.oracle = false;
   BaseTypes.GEOMETRY.types.oracle = false;
+  BaseTypes.JSON.types.oracle = ['CLOB'];
   class STRING extends BaseTypes.STRING {
     toSql() {
       if (this.length > 4000 || (this._binary && this._length > 2000)) {
@@ -53,11 +55,13 @@ module.exports = BaseTypes => {
 
   class BOOLEAN extends BaseTypes.BOOLEAN {
     toSql() {
-      return 'SMALLINT';
+        return 'SMALLINT';
     }
-
     _stringify(value) {
-      return value ? 1 : 0;
+        return value ? 1 : 0;
+    }
+    static parse(value){
+        return value==1 ? true: false;
     }
   }
 
@@ -197,9 +201,23 @@ module.exports = BaseTypes => {
       return `TO_DATE('${date}','${format}')`;
     }
   }
+  class JSON extends BaseTypes.JSON {
+    toSql() {
+      return 'CLOB';
+    }
+
+    _stringify(value) {
+      return Utils.toString(value);
+    }
+
+    static parse(value) {
+      return Utils.toJson(value);
+    }
+  }
 
   const exports = {
     BOOLEAN,
+    JSON,
     'DOUBLE PRECISION': DOUBLE,
     DOUBLE,
     STRING,
