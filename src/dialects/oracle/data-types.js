@@ -47,7 +47,11 @@ module.exports = BaseTypes => {
     _stringify(value, options) {
       if (this._binary) {
         return BaseTypes.CLOB.prototype._stringify(value);
-      } else {
+      } 
+      else if(value.includes(`'`)){
+        return options.escape(value); 
+      }
+      else {
         return options.escape(value);
       }
     }
@@ -82,6 +86,7 @@ module.exports = BaseTypes => {
   }
 
   class DATE extends BaseTypes.DATE {
+    static escape = false;
     toSql() {
       return 'TIMESTAMP WITH LOCAL TIME ZONE';
     }
@@ -215,9 +220,35 @@ module.exports = BaseTypes => {
     }
   }
 
+  class TIME extends BaseTypes.TIME {
+    static escape = false;
+
+    toSql() {
+        return 'TIMESTAMP';
+    }
+    _stringify(time, options) {
+        const date = "2000-01-01"
+        const format = 'YYYY-MM-DD HH24:MI:SS.FFTZH:TZM';
+        const newDate = moment(`${date} ${time}`, 'YYYY-MM-DD HH:mm:ss')
+        const finalDate = newDate.format('YYYY-MM-DDTHH:mm:ss')
+        return `TIMESTAMP'${finalDate}'` ;
+    }
+    static parse(value, options) {
+        value = value.toString();
+        if (value === null) {
+            return value;
+        }
+        else{
+          let time = moment(value).format('HH:mm:ss'); 
+          return time;
+        }
+    }
+  }
+
   const exports = {
     BOOLEAN,
     JSON,
+    TIME,
     'DOUBLE PRECISION': DOUBLE,
     DOUBLE,
     STRING,
